@@ -3,6 +3,7 @@ import { useDatabase } from './hooks/useDatabase';
 import { useMovingAverage } from './hooks/useMovingAverage';
 import { useTimer } from './hooks/useTimer';
 import { useGitHubSync } from './hooks/useGitHubSync';
+import { useNutrition } from './hooks/useNutrition';
 
 import Header from './components/Header';
 import Navigation, { NavigationTab } from './components/Navigation';
@@ -14,6 +15,7 @@ import WorkoutPlanner from './components/WorkoutPlanner';
 import WorkoutHistoryList from './components/WorkoutHistoryList';
 import DataSyncPanel from './components/DataSyncPanel';
 import ExerciseManager from './components/ExerciseManager';
+import NutritionTracker from './components/NutritionTracker';
 import { WorkoutExercise, WorkoutLog } from './types';
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
   const processedWeightLogs = useMovingAverage(db.weightLogs, 7);
   const timer = useTimer(60);
   const gitHubSync = useGitHubSync(db.githubSettings, db.getSnapshotJSON, db.importSnapshotJSON);
+  const nutrition = useNutrition();
 
   const lastWeightVal = processedWeightLogs.length > 0
     ? processedWeightLogs[0].weightKg
@@ -93,53 +96,96 @@ export default function App() {
         )}
 
         {/* 
-          TABLET / LANDSCAPE DUAL COLUMN LAYOUT (lg:grid lg:grid-cols-12 lg:gap-6)
-          Column Left: 5 cols (~40%) -> Quick Weight Entry, Active Workout Timer, Recent Logs
-          Column Right: 7 cols (~60%) -> Expanded EMA-7 Chart, Stats, History
+          DESKTOP / TABLET DUAL COLUMN & TAB VIEW (lg:block)
         */}
-        <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 items-start">
-          {/* Left Column (40%) */}
-          <div className="lg:col-span-5 space-y-6">
-            <WeightQuickEntry
-              lastWeight={lastWeightVal}
-              onSave={handleWeightSave}
-            />
+        <div className="hidden lg:block">
+          {activeTab === 'today' && (
+            <div className="grid grid-cols-12 gap-6 items-start">
+              {/* Left Column (40%) */}
+              <div className="col-span-5 space-y-6">
+                <WeightQuickEntry
+                  lastWeight={lastWeightVal}
+                  onSave={handleWeightSave}
+                />
 
-            {isLiveWorkout ? (
-              <WorkoutExecution
-                timer={timer}
-                initialExercises={liveWorkoutExercises}
-                availableExercises={db.exerciseList}
-                onFinishWorkout={handleFinishLiveWorkout}
-                onCancel={() => setIsLiveWorkout(false)}
+                {isLiveWorkout ? (
+                  <WorkoutExecution
+                    timer={timer}
+                    initialExercises={liveWorkoutExercises}
+                    availableExercises={db.exerciseList}
+                    onFinishWorkout={handleFinishLiveWorkout}
+                    onCancel={() => setIsLiveWorkout(false)}
+                  />
+                ) : (
+                  <WorkoutPlanner
+                    exerciseList={db.exerciseList}
+                    onStartLiveWorkout={handleStartLiveWorkout}
+                    onOpenExerciseManager={() => setShowExerciseManager((prev) => !prev)}
+                  />
+                )}
+
+                <WeightHistoryList
+                  logs={processedWeightLogs.slice(0, 5)}
+                  onDelete={db.removeWeightLog}
+                />
+              </div>
+
+              {/* Right Column (60%) */}
+              <div className="col-span-7 space-y-6">
+                <InteractiveChart
+                  processedLogs={processedWeightLogs}
+                  workouts={db.workouts}
+                  profile={db.profile}
+                />
+
+                <WorkoutHistoryList
+                  workouts={db.workouts}
+                  onDelete={db.removeWorkout}
+                />
+
+                <DataSyncPanel
+                  getSnapshotJSON={db.getSnapshotJSON}
+                  importSnapshotJSON={db.importSnapshotJSON}
+                  githubSettings={db.githubSettings}
+                  updateGithubSettings={db.updateGithubSettings}
+                  gitHubSync={gitHubSync}
+                  seedMockData={db.seedMockData}
+                  profile={db.profile}
+                  updateProfile={db.updateProfile}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'trend' && (
+            <div className="space-y-6">
+              <InteractiveChart
+                processedLogs={processedWeightLogs}
+                workouts={db.workouts}
+                profile={db.profile}
               />
-            ) : (
-              <WorkoutPlanner
-                exerciseList={db.exerciseList}
-                onStartLiveWorkout={handleStartLiveWorkout}
-                onOpenExerciseManager={() => setShowExerciseManager((prev) => !prev)}
+
+              <WeightHistoryList
+                logs={processedWeightLogs}
+                onDelete={db.removeWeightLog}
               />
-            )}
+            </div>
+          )}
 
-            <WeightHistoryList
-              logs={processedWeightLogs.slice(0, 5)}
-              onDelete={db.removeWeightLog}
-            />
-          </div>
-
-          {/* Right Column (60%) */}
-          <div className="lg:col-span-7 space-y-6">
-            <InteractiveChart
-              processedLogs={processedWeightLogs}
-              workouts={db.workouts}
+          {activeTab === 'nutrition' && (
+            <NutritionTracker
+              currentLog={nutrition.currentLog}
               profile={db.profile}
+              selectedDate={nutrition.selectedDate}
+              onSelectDate={nutrition.setSelectedDate}
+              onAddMealItem={nutrition.addMealItem}
+              onRemoveMealItem={nutrition.removeMealItem}
+              onSearchFoods={nutrition.searchFoods}
+              onUpdateProfile={db.updateProfile}
             />
+          )}
 
-            <WorkoutHistoryList
-              workouts={db.workouts}
-              onDelete={db.removeWorkout}
-            />
-
+          {activeTab === 'data' && (
             <DataSyncPanel
               getSnapshotJSON={db.getSnapshotJSON}
               importSnapshotJSON={db.importSnapshotJSON}
@@ -150,12 +196,12 @@ export default function App() {
               profile={db.profile}
               updateProfile={db.updateProfile}
             />
-          </div>
+          )}
         </div>
 
         {/* 
           MOBILE PORTRAIT TABBED LAYOUT (lg:hidden)
-          Switches between 3 views: today, trend, data
+          Switches between 4 views: today, trend, nutrition, data
         */}
         <div className="lg:hidden space-y-6">
           {activeTab === 'today' && (
@@ -201,6 +247,19 @@ export default function App() {
                 onDelete={db.removeWeightLog}
               />
             </>
+          )}
+
+          {activeTab === 'nutrition' && (
+            <NutritionTracker
+              currentLog={nutrition.currentLog}
+              profile={db.profile}
+              selectedDate={nutrition.selectedDate}
+              onSelectDate={nutrition.setSelectedDate}
+              onAddMealItem={nutrition.addMealItem}
+              onRemoveMealItem={nutrition.removeMealItem}
+              onSearchFoods={nutrition.searchFoods}
+              onUpdateProfile={db.updateProfile}
+            />
           )}
 
           {activeTab === 'data' && (

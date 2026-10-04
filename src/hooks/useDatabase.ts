@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAllFromStore, putInStore, deleteFromStore, clearStore } from '../services/db';
-import { WeightLog, WorkoutLog, UserProfile, GitHubSettings, ExerciseTemplate, TrendFitSnapshot, WeightContextTag } from '../types';
+import { WeightLog, WorkoutLog, UserProfile, GitHubSettings, ExerciseTemplate, DailyNutritionLog, TrendFitSnapshot, WeightContextTag } from '../types';
 
 const MOCK_PROFILE: UserProfile = { id: 'profile_default', targetWeightKg: 75.0, unit: 'kg' };
 
@@ -157,18 +157,21 @@ export function useDatabase() {
   };
 
   // Full Export/Import Snapshot JSON
-  const getSnapshotJSON = useCallback((): TrendFitSnapshot => {
+  const getSnapshotJSON = useCallback(async (): Promise<TrendFitSnapshot> => {
+    const nutLogs = await getAllFromStore<DailyNutritionLog>('nutritionLogs');
     return {
       $schema: "https://trendfit.app/schema/v1.json",
       version: 1,
       lastUpdated: new Date().toISOString(),
       profile: {
         targetWeightKg: profile.targetWeightKg,
+        targetCalories: profile.targetCalories || 2000,
         unit: profile.unit || 'kg'
       },
       weightLogs,
       workouts,
-      exercises: exerciseList
+      exercises: exerciseList,
+      nutritionLogs: nutLogs
     };
   }, [profile, weightLogs, workouts, exerciseList]);
 
@@ -184,6 +187,7 @@ export function useDatabase() {
       await clearStore('weightLogs');
       await clearStore('workouts');
       await clearStore('exercises');
+      await clearStore('nutritionLogs');
     }
 
     if (data.profile) {
@@ -210,6 +214,14 @@ export function useDatabase() {
       for (const ex of data.exercises) {
         if (ex.id && ex.name) {
           await putInStore('exercises', ex);
+        }
+      }
+    }
+
+    if (Array.isArray(data.nutritionLogs)) {
+      for (const nut of data.nutritionLogs) {
+        if (nut.id && nut.date) {
+          await putInStore('nutritionLogs', nut);
         }
       }
     }

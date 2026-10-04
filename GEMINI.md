@@ -77,6 +77,21 @@ Ambiente claro (*light mode* moderno), visual energizante e limpo, evitando fund
     1. `GET /repos/{owner}/{repo}/contents/data.json` para carregar estado mais recente.
     2. `PUT /repos/{owner}/{repo}/contents/data.json` ao finalizar o treino ou registrar o peso diário, criando um commit automático.
 
+### 3.4. Módulo de Alimentação & Controle Calórico (Novo)
+
+* **Aba Dedicada:** Tab exclusiva `Alimentação` (`nutrition`) na navegação principal para acompanhamento de ingestão diária sem poluir as demais telas.
+* **Barra de Progresso Dinâmica & Meta Ajustável:**
+  * Exibe meta diária (padrão `2000 kcal`, editável diretamente na interface).
+  * Barra de progresso visual com gradientes energéticos:
+    * `Teal / Emerald` quando dentro da meta (exibindo calorias restantes).
+    * `Orange / Rose` se ultrapassar a meta (exibindo excesso calórico com alerta visual).
+* **Refeições Categorizadas:**
+  * Grupos organizados: `Café da Manhã`, `Almoço`, `Lanche`, `Jantar`, `Outros`.
+* **Busca Híbrida & Garantia Offline 100%:**
+  * **Banco TACO Pré-carregado:** Banco nativo local com alimentos brasileiros essenciais (arroz, feijão, frango, ovos, aveia, banana, etc.) sem depender de internet.
+  * **Cache Automático em IndexedDB:** Consultas online via Open Food Facts API salvam automaticamente os produtos no IndexedDB (`foodDatabase`), garantindo que buscas futuras funcionem 100% offline no subsolo da academia.
+  * **Calculadora por Gramas:** Ajuste simples de porção em gramas com cálculo proporcional de calorias e macros.
+
 ---
 
 ## 4. Schema de Dados (JSON de Exportação)
@@ -90,6 +105,7 @@ Estrutura formal do arquivo versionável:
   "lastUpdated": "2026-10-04T12:00:00Z",
   "profile": {
     "targetWeightKg": 75.0,
+    "targetCalories": 2000,
     "unit": "kg"
   },
   "weightLogs": [
@@ -131,6 +147,26 @@ Estrutura formal do arquivo versionável:
       "overallRpe": 8,
       "notes": "Boa densidade, ritmo consistente"
     }
+  ],
+  "nutritionLogs": [
+    {
+      "id": "nut_2026-10-04",
+      "date": "2026-10-04",
+      "totalCalories": 1850,
+      "meals": [
+        {
+          "mealType": "Almoço",
+          "items": [
+            {
+              "id": "mi_1",
+              "foodName": "Arroz Branco Cozido",
+              "grams": 150,
+              "calories": 192
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
 ```
@@ -145,7 +181,7 @@ Estrutura formal do arquivo versionável:
   * `theme_color: "#0D9488"` e `background_color: "#F8FAFC"`.
   * Ícones em resoluções `192x192` e `512x512` com `apple-touch-icon` configurado no HTML.
 * **Armazenamento:**
-  * Uso prioritário de `localStorage` para configurações rápidas e `IndexedDB` para a série histórica do gráfico.
+  * Uso prioritário de `localStorage` para configurações rápidas e `IndexedDB` (`weightLogs`, `workouts`, `nutritionLogs`, `foodDatabase`) para a série histórica e cache de alimentos.
   * Estratégia de cache do Service Worker: **Stale-While-Revalidate** para os assets do app, garantindo que abra instantaneamente mesmo sem sinal de internet no subsolo da academia.
 
 ---
@@ -153,10 +189,10 @@ Estrutura formal do arquivo versionável:
 ## 6. Layout Responsivo: Mobile vs. Tablet
 
 * **No iPhone (Mobile Portrait):**
-  * Barra de navegação inferior fixa com 3 abas: **Hoje / Treino**, **Tendência / Peso**, **Dados / Sync**.
+  * Barra de navegação inferior fixa com 4 abas: **Hoje / Treino**, **Tendência / Peso**, **Alimentação**, **Dados / Sync**.
   * Telas orientadas a cards de altura moderada e botões primários com altura mínima de 48px para facilitar o toque com a mão em movimento.
 * **No Tablet Samsung (Landscape / Desk Mode):**
-  * Layout em grade de 2 colunas:
+  * Navegação superior e suporte a layout em 2 colunas:
     * **Coluna Esquerda (40%):** Painel de entrada rápida, histórico recente e cronômetro ativo.
     * **Coluna Direita (60%):** Gráfico expandido de média móvel com filtros e indicadores de densidade dos treinos.
 

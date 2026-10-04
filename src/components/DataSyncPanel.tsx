@@ -4,7 +4,7 @@ import { GitHubSettings, UserProfile, TrendFitSnapshot } from '../types';
 import { UseGitHubSyncReturn } from '../hooks/useGitHubSync';
 
 export interface DataSyncPanelProps {
-  getSnapshotJSON: () => TrendFitSnapshot;
+  getSnapshotJSON: () => TrendFitSnapshot | Promise<TrendFitSnapshot>;
   importSnapshotJSON: (data: TrendFitSnapshot, mode?: 'merge' | 'replace') => Promise<void>;
   githubSettings: GitHubSettings;
   updateGithubSettings: (settings: Partial<GitHubSettings>) => Promise<void>;
@@ -80,8 +80,8 @@ export default function DataSyncPanel({
   };
 
   // Download manual JSON
-  const handleDownloadBackup = () => {
-    const data = getSnapshotJSON();
+  const handleDownloadBackup = async () => {
+    const data = await getSnapshotJSON();
     const str = JSON.stringify(data, null, 2);
     const blob = new Blob([str], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

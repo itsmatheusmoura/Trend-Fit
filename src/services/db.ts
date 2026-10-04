@@ -1,7 +1,7 @@
-import { WeightLog, WorkoutLog, UserProfile, GitHubSettings, ExerciseTemplate } from '../types';
+import { WeightLog, WorkoutLog, UserProfile, GitHubSettings, ExerciseTemplate, DailyNutritionLog, FoodItem } from '../types';
 
 const DB_NAME = 'trendfit_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -31,6 +31,16 @@ export function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('exercises')) {
         const exStore = db.createObjectStore('exercises', { keyPath: 'id' });
         exStore.createIndex('category', 'category', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('nutritionLogs')) {
+        const nutStore = db.createObjectStore('nutritionLogs', { keyPath: 'id' });
+        nutStore.createIndex('date', 'date', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('foodDatabase')) {
+        const foodStore = db.createObjectStore('foodDatabase', { keyPath: 'id' });
+        foodStore.createIndex('name', 'name', { unique: false });
       }
     };
 

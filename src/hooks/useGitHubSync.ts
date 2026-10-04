@@ -11,7 +11,7 @@ export interface UseGitHubSyncReturn {
 
 export function useGitHubSync(
   githubSettings: GitHubSettings,
-  getSnapshotJSON: () => TrendFitSnapshot,
+  getSnapshotJSON: () => TrendFitSnapshot | Promise<TrendFitSnapshot>,
   importSnapshotJSON: (data: TrendFitSnapshot, mode?: 'merge' | 'replace') => Promise<void>
 ): UseGitHubSyncReturn {
   const [syncing, setSyncing] = useState<boolean>(false);
@@ -107,7 +107,7 @@ export function useGitHubSync(
       }
 
       // 2. Prepare snapshot & base64
-      const snapshot = getSnapshotJSON();
+      const snapshot = await getSnapshotJSON();
       const jsonString = JSON.stringify(snapshot, null, 2);
       const contentBase64 = utf8ToBase64(jsonString);
 

@@ -56,6 +56,7 @@ export interface WorkoutLog {
 export interface UserProfile {
   id?: string;
   targetWeightKg: number;
+  targetCalories?: number;
   unit: string;
 }
 
@@ -67,6 +68,42 @@ export interface GitHubSettings {
   token: string;
 }
 
+export type MealType = 'Café da Manhã' | 'Almoço' | 'Lanche' | 'Jantar' | 'Outros';
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  category?: string;
+  caloriesPer100g: number;
+  proteinPer100g?: number;
+  carbsPer100g?: number;
+  fatPer100g?: number;
+  isCustom?: boolean;
+}
+
+export interface MealItem {
+  id: string;
+  foodName: string;
+  grams: number;
+  calories: number;
+  proteinGrams?: number;
+  carbsGrams?: number;
+  fatGrams?: number;
+}
+
+export interface MealGroup {
+  mealType: MealType;
+  items: MealItem[];
+}
+
+export interface DailyNutritionLog {
+  id: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD
+  meals: MealGroup[];
+  totalCalories: number;
+  totalProteinGrams?: number;
+}
+
 export interface TrendFitSnapshot {
   $schema?: string;
   version?: number;
@@ -75,4 +112,5 @@ export interface TrendFitSnapshot {
   weightLogs?: WeightLog[];
   workouts?: WorkoutLog[];
   exercises?: ExerciseTemplate[];
+  nutritionLogs?: DailyNutritionLog[];
 }
