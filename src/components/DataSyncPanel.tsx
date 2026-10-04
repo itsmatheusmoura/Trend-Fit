@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, Github, RefreshCw, Database, CheckCircle, AlertCircle, Sparkles, Scale, Check } from 'lucide-react';
+import { Download, Upload, Github, RefreshCw, Database, CheckCircle, AlertCircle, Sparkles, Scale, Check, KeyRound, Lock } from 'lucide-react';
 import { GitHubSettings, UserProfile, TrendFitSnapshot } from '../types';
 import { UseGitHubSyncReturn } from '../hooks/useGitHubSync';
 
@@ -29,11 +29,22 @@ export default function DataSyncPanel({
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Form state for GitHub Credentials with Bitwarden / Auto-fill support
+  const [ownerInput, setOwnerInput] = useState<string>(githubSettings.owner || '');
+  const [repoInput, setRepoInput] = useState<string>(githubSettings.repo || '');
+  const [tokenInput, setTokenInput] = useState<string>(githubSettings.token || '');
+
   useEffect(() => {
     if (profile?.targetWeightKg) {
       setTargetWeight(String(profile.targetWeightKg));
     }
   }, [profile]);
+
+  useEffect(() => {
+    setOwnerInput(githubSettings.owner || '');
+    setRepoInput(githubSettings.repo || '');
+    setTokenInput(githubSettings.token || '');
+  }, [githubSettings]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +60,21 @@ export default function DataSyncPanel({
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar meta.';
+      setStatusMsg({ type: 'error', text: msg });
+    }
+  };
+
+  const handleSaveGithubCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateGithubSettings({
+        owner: ownerInput.trim(),
+        repo: repoInput.trim(),
+        token: tokenInput.trim()
+      });
+      setStatusMsg({ type: 'success', text: 'Credenciais do GitHub salvas com sucesso no banco local!' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar credenciais.';
       setStatusMsg({ type: 'error', text: msg });
     }
   };
@@ -93,21 +119,21 @@ export default function DataSyncPanel({
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-soft-sm space-y-5">
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 gap-4 pb-2">
+      <div className="flex border-b border-slate-200 gap-4 pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'profile'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Scale className="w-4 h-4" /> Configurar Meta de Peso
+          <Scale className="w-4 h-4" /> Configurar Meta
         </button>
 
         <button
           onClick={() => setActiveTab('backup')}
-          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'backup'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -118,13 +144,13 @@ export default function DataSyncPanel({
 
         <button
           onClick={() => setActiveTab('github')}
-          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 ${
+          className={`text-xs font-bold pb-2 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'github'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Github className="w-4 h-4" /> GitHub REST API Sync
+          <Github className="w-4 h-4" /> GitHub Sync (Bitwarden)
         </button>
       </div>
 
@@ -250,51 +276,91 @@ export default function DataSyncPanel({
         </div>
       )}
 
-      {/* GitHub Sync Tab */}
+      {/* GitHub Sync Tab with Bitwarden / Password Manager Integration */}
       {activeTab === 'github' && (
         <div className="space-y-4">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Sincronização anônima local-first via <strong>GitHub Fine-Grained Access Token</strong>.
-            O snapshot é persistido em formato JSON em um repositório da sua conta.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Password Manager Autocomplete Info Box */}
+          <div className="bg-teal-50 border border-teal-200 p-3.5 rounded-xl text-xs text-teal-900 leading-relaxed flex items-start gap-2.5">
+            <KeyRound className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Dono (Owner / Username):</label>
-              <input
-                type="text"
-                placeholder="ex: matheus"
-                value={githubSettings.owner || ''}
-                onChange={(e) => updateGithubSettings({ owner: e.target.value })}
-                className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Repositório (Repo):</label>
-              <input
-                type="text"
-                placeholder="ex: trendfit-data"
-                value={githubSettings.repo || ''}
-                onChange={(e) => updateGithubSettings({ repo: e.target.value })}
-                className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Personal Access Token (fine-grained):</label>
-              <input
-                type="password"
-                placeholder="github_pat_..."
-                value={githubSettings.token || ''}
-                onChange={(e) => updateGithubSettings({ token: e.target.value })}
-                className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
-              />
+              <strong className="block text-teal-950 font-bold mb-0.5">Suporte a Autopreenchimento (Bitwarden, 1Password, Chrome)</strong>
+              Este formulário usa tags semânticas padronizadas. Se você salvar seu token e usuário no Bitwarden ou gerenciador de senhas, o aplicativo autopreencherá os campos na hora. Uma vez salvas, as chaves ficam gravadas no seu dispositivo local.
             </div>
           </div>
 
+          {/* Semantic Form wrapper for Password Manager detection */}
+          <form
+            id="github-sync-credentials-form"
+            name="github-sync-credentials-form"
+            onSubmit={handleSaveGithubCredentials}
+            className="space-y-3"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="github-owner" className="text-xs font-semibold text-slate-700 block mb-1">
+                  Dono / Usuário GitHub (Username):
+                </label>
+                <input
+                  id="github-owner"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="ex: matheus (Bitwarden)"
+                  value={ownerInput}
+                  onChange={(e) => setOwnerInput(e.target.value)}
+                  className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="github-repo" className="text-xs font-semibold text-slate-700 block mb-1">
+                  Repositório de Backup (Repo):
+                </label>
+                <input
+                  id="github-repo"
+                  name="github-repo"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="ex: trendfit-data"
+                  value={repoInput}
+                  onChange={(e) => setRepoInput(e.target.value)}
+                  className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label htmlFor="github-token" className="text-xs font-semibold text-slate-700 block mb-1 flex items-center justify-between">
+                  <span>Personal Access Token (Fine-grained):</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Permissão: Contents (Read & write)</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="github-token"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="github_pat_... (Bitwarden / Autopreencher)"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl p-2.5 pr-9 text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" /> Salvar Credenciais no Banco Local
+              </button>
+            </div>
+          </form>
+
           {/* Sync actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-2 border-t border-slate-100">
             <button
               onClick={gitHubSync.syncPull}
               disabled={gitHubSync.syncing}

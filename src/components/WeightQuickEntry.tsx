@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Check, Calendar, Tag, FileText } from 'lucide-react';
+import { Plus, Minus, Check, Calendar, Tag, FileText, CheckCircle2 } from 'lucide-react';
 import { WeightContextTag, WeightLog } from '../types';
 
 export interface WeightQuickEntryProps {
@@ -13,7 +13,9 @@ export default function WeightQuickEntry({ lastWeight, onSave }: WeightQuickEntr
   const [timestamp, setTimestamp] = useState<string>(() => new Date().toISOString().slice(0, 16));
   const [notes, setNotes] = useState<string>('');
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+  const [lastSavedVal, setLastSavedVal] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (lastWeight && !weight) {
@@ -38,37 +40,48 @@ export default function WeightQuickEntry({ lastWeight, onSave }: WeightQuickEntr
     }
 
     try {
+      setIsSubmitting(true);
       await onSave({
         weightKg: val,
         timestamp: new Date(timestamp).toISOString(),
         tag,
         notes
       });
+      setLastSavedVal(val);
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2000);
+      setTimeout(() => setSavedSuccess(false), 4000);
       setNotes('');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao registrar peso.';
       setErrorMsg(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-soft-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-soft-sm space-y-4">
+      <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
           Registro Rápido de Peso
         </h2>
-        {savedSuccess && (
-          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-1 animate-fade-in">
-            <Check className="w-3.5 h-3.5" /> Salvo!
-          </span>
-        )}
       </div>
 
+      {/* Prominent Success Alert Banner */}
+      {savedSuccess && lastSavedVal !== null && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold flex items-center justify-between shadow-sm animate-fade-in">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 flex-shrink-0" />
+            <span>Peso de <strong>{lastSavedVal} kg</strong> registrado com sucesso! Média móvel atualizada.</span>
+          </span>
+          <button onClick={() => setSavedSuccess(false)} className="text-emerald-700 hover:text-emerald-950 font-bold ml-2">✕</button>
+        </div>
+      )}
+
+      {/* Error Banner */}
       {errorMsg && (
-        <div className="mb-3 text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2 rounded-lg font-medium">
+        <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium">
           {errorMsg}
         </div>
       )}
@@ -158,9 +171,21 @@ export default function WeightQuickEntry({ lastWeight, onSave }: WeightQuickEntr
         {/* Submit CTA */}
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm rounded-xl shadow-md shadow-teal-600/20 active:scale-[0.99] transition-all flex items-center justify-center space-x-2"
+          disabled={isSubmitting}
+          className={`w-full py-3.5 px-4 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 active:scale-[0.99] ${
+            savedSuccess
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+              : 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-600/20'
+          }`}
         >
-          <span>Registrar Peso</span>
+          {savedSuccess ? (
+            <>
+              <Check className="w-5 h-5 stroke-[2.5]" />
+              <span>Registrado com Sucesso!</span>
+            </>
+          ) : (
+            <span>Registrar Peso</span>
+          )}
         </button>
       </form>
     </div>
