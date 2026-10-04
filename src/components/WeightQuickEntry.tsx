@@ -18,10 +18,11 @@ export default function WeightQuickEntry({ lastWeight, onSave }: WeightQuickEntr
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (lastWeight && !weight) {
+    // Only prefill weight initially if lastWeight is provided and weight state is at default
+    if (lastWeight && weight === '75.0') {
       setWeight(String(lastWeight));
     }
-  }, [lastWeight, weight]);
+  }, [lastWeight]);
 
   const handleAdjust = (delta: number) => {
     const current = parseFloat(weight) || 75.0;
