@@ -12,10 +12,11 @@ import InteractiveChart from './components/InteractiveChart';
 import WeightHistoryList from './components/WeightHistoryList';
 import WorkoutExecution from './components/WorkoutExecution';
 import WorkoutPlanner from './components/WorkoutPlanner';
-import WorkoutHistoryList from './components/WorkoutHistoryList';
 import DataSyncPanel from './components/DataSyncPanel';
 import ExerciseManager from './components/ExerciseManager';
 import NutritionTracker from './components/NutritionTracker';
+import HiitTreadmillTracker from './components/HiitTreadmillTracker';
+import WorkoutHistoryList from './components/WorkoutHistoryList';
 import { WorkoutExercise, WorkoutLog } from './types';
 
 export default function App() {
@@ -51,6 +52,14 @@ export default function App() {
     if (gitHubSync.isConfigured) {
       gitHubSync.syncPush();
     }
+  };
+
+  const handleHiitSave = async (workoutData: Partial<WorkoutLog>) => {
+    const saved = await db.saveWorkout(workoutData);
+    if (gitHubSync.isConfigured) {
+      gitHubSync.syncPush();
+    }
+    return saved;
   };
 
   const handleWeightSave = async (weightData: { weightKg: number; timestamp: string; tag: 'Jejum' | 'Pós-treino' | 'Normal'; notes?: string }) => {
@@ -121,6 +130,7 @@ export default function App() {
                     exerciseList={db.exerciseList}
                     onStartLiveWorkout={handleStartLiveWorkout}
                     onOpenExerciseManager={() => setShowExerciseManager((prev) => !prev)}
+                    onOpenHiitTab={() => setActiveTab('hiit')}
                   />
                 )}
 
@@ -154,6 +164,16 @@ export default function App() {
                   updateProfile={db.updateProfile}
                 />
               </div>
+            </div>
+          )}
+
+          {activeTab === 'hiit' && (
+            <div className="max-w-4xl mx-auto">
+              <HiitTreadmillTracker
+                workouts={db.workouts}
+                onSaveWorkout={handleHiitSave}
+                onDeleteWorkout={db.removeWorkout}
+              />
             </div>
           )}
 
@@ -201,7 +221,7 @@ export default function App() {
 
         {/* 
           MOBILE PORTRAIT TABBED LAYOUT (lg:hidden)
-          Switches between 4 views: today, trend, nutrition, data
+          Switches between 5 views: today, hiit, trend, nutrition, data
         */}
         <div className="lg:hidden space-y-6">
           {activeTab === 'today' && (
@@ -219,6 +239,7 @@ export default function App() {
                   exerciseList={db.exerciseList}
                   onStartLiveWorkout={handleStartLiveWorkout}
                   onOpenExerciseManager={() => setShowExerciseManager((prev) => !prev)}
+                  onOpenHiitTab={() => setActiveTab('hiit')}
                 />
               )}
 
@@ -232,6 +253,14 @@ export default function App() {
                 onDelete={db.removeWorkout}
               />
             </>
+          )}
+
+          {activeTab === 'hiit' && (
+            <HiitTreadmillTracker
+              workouts={db.workouts}
+              onSaveWorkout={handleHiitSave}
+              onDeleteWorkout={db.removeWorkout}
+            />
           )}
 
           {activeTab === 'trend' && (

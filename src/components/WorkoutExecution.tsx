@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, RotateCcw, Plus, CheckCircle, Flame, Dumbbell, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, CheckCircle, Flame, Dumbbell, Clock, Trash2, X } from 'lucide-react';
 import { UseTimerReturn } from '../hooks/useTimer';
 import { WorkoutExercise, ExerciseTemplate, SetEffort, WorkoutLog } from '../types';
 
@@ -21,7 +21,7 @@ export default function WorkoutExecution({ timer, initialExercises = [], availab
     }
     return [
       { id: 'ex_1', name: 'Agachamento Livre', category: 'strength', sets: [] },
-      { id: 'ex_2', name: 'Esteira Sprints', category: 'cardio', sets: [] }
+      { id: 'ex_3', name: 'Supino Reto', category: 'strength', sets: [] }
     ];
   });
 
@@ -34,6 +34,7 @@ export default function WorkoutExecution({ timer, initialExercises = [], availab
   const currentExercise = exercises[activeExIdx] || exercises[0];
 
   const handleAddSet = (effortType: SetEffort) => {
+    if (!currentExercise) return;
     const newSet = {
       set: (currentExercise.sets?.length || 0) + 1,
       effort: effortType,
@@ -52,6 +53,27 @@ export default function WorkoutExecution({ timer, initialExercises = [], availab
 
     // Auto-trigger rest timer on set completion!
     timer.startTimer();
+  };
+
+  const handleRemoveSet = (setIdxToRemove: number) => {
+    setExercises((prev) =>
+      prev.map((ex, idx) => {
+        if (idx === activeExIdx) {
+          const updatedSets = (ex.sets || [])
+            .filter((_, sIdx) => sIdx !== setIdxToRemove)
+            .map((s, i) => ({ ...s, set: i + 1 }));
+          return { ...ex, sets: updatedSets };
+        }
+        return ex;
+      })
+    );
+  };
+
+  const handleRemoveExercise = (idxToRemove: number) => {
+    setExercises((prev) => prev.filter((_, i) => i !== idxToRemove));
+    if (activeExIdx >= idxToRemove && activeExIdx > 0) {
+      setActiveExIdx((prev) => Math.max(0, prev - 1));
+    }
   };
 
   const handleAddCustomExercise = (e: React.FormEvent) => {
@@ -152,78 +174,122 @@ export default function WorkoutExecution({ timer, initialExercises = [], availab
 
       {/* Exercise Selector */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-soft-sm">
-        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-teal-600" />
-          Exercício Atual
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Dumbbell className="w-4 h-4 text-teal-600" />
+            Exercício Atual: <span className="text-teal-700 font-extrabold">{currentExercise?.name || 'Nenhum'}</span>
+          </h3>
+          {exercises.length > 0 && currentExercise && (
+            <button
+              type="button"
+              onClick={() => handleRemoveExercise(activeExIdx)}
+              className="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center gap-1 transition-colors"
+              title="Excluir este exercício do treino atual"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remover Exercício</span>
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {exercises.map((ex, idx) => (
-            <button
+            <div
               key={ex.id || idx}
-              onClick={() => setActiveExIdx(idx)}
-              className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all ${
+              className={`inline-flex items-center rounded-xl border transition-all ${
                 activeExIdx === idx
                   ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
               }`}
             >
-              {ex.name} ({ex.sets?.length || 0})
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveExIdx(idx)}
+                className="px-3 py-1.5 text-xs font-bold focus:outline-none"
+              >
+                {ex.name} ({ex.sets?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveExercise(idx);
+                }}
+                className={`pr-2 py-1.5 text-xs transition-opacity ${
+                  activeExIdx === idx ? 'text-teal-100 hover:text-white' : 'text-slate-400 hover:text-rose-600'
+                }`}
+                title="Remover exercício"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ))}
         </div>
 
         {/* 1-Touch RPE Set Logging Buttons */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-          <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-            Registrar Série — Percepção de Esforço (RPE):
-          </p>
+        {currentExercise && (
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+              Registrar Série — Percepção de Esforço (RPE):
+            </p>
 
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => handleAddSet('light')}
-              className="py-3 px-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
-            >
-              <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-              <span>Leve</span>
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleAddSet('light')}
+                className="py-3 px-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
+              >
+                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                <span>Leve</span>
+              </button>
 
-            <button
-              onClick={() => handleAddSet('optimal')}
-              className="py-3 px-2 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
-            >
-              <span className="w-3 h-3 rounded-full bg-teal-600"></span>
-              <span>Ideal / Moderado</span>
-            </button>
+              <button
+                onClick={() => handleAddSet('optimal')}
+                className="py-3 px-2 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
+              >
+                <span className="w-3 h-3 rounded-full bg-teal-600"></span>
+                <span>Ideal / Moderado</span>
+              </button>
 
-            <button
-              onClick={() => handleAddSet('limit')}
-              className="py-3 px-2 bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
-            >
-              <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              <span>Limite / Falha</span>
-            </button>
+              <button
+                onClick={() => handleAddSet('limit')}
+                className="py-3 px-2 bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-800 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 active:scale-95 transition-all"
+              >
+                <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                <span>Limite / Falha</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Sets Completed List */}
         {currentExercise?.sets && currentExercise.sets.length > 0 && (
           <div className="mt-4 pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-600 mb-2">Séries Registradas:</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold text-slate-600">Séries Registradas ({currentExercise.sets.length}):</h4>
+              <span className="text-[10px] text-slate-500 font-medium">Clique no ✕ para apagar uma série</span>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {currentExercise.sets.map((s) => (
-                <span
-                  key={s.set}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+              {currentExercise.sets.map((s, setIdx) => (
+                <div
+                  key={setIdx}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all ${
                     s.effort === 'light'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                       : s.effort === 'limit'
-                      ? 'bg-orange-50 text-orange-700 border-orange-200'
-                      : 'bg-teal-50 text-teal-700 border-teal-200'
+                      ? 'bg-orange-50 text-orange-800 border-orange-300'
+                      : 'bg-teal-50 text-teal-800 border-teal-300'
                   }`}
                 >
-                  Série {s.set}: {s.effort === 'light' ? 'Leve' : s.effort === 'limit' ? 'Falha' : 'Ideal'} ({s.restSeconds}s)
-                </span>
+                  <span>Série {s.set}: {s.effort === 'light' ? 'Leve' : s.effort === 'limit' ? 'Falha' : 'Ideal'} ({s.restSeconds || 60}s)</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSet(setIdx)}
+                    className="p-0.5 rounded-full hover:bg-slate-200/60 text-slate-500 hover:text-rose-600 transition-colors"
+                    title="Excluir série"
+                  >
+                    <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>

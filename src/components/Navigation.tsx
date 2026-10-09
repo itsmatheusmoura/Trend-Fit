@@ -1,7 +1,8 @@
 import React from 'react';
-import { Dumbbell, TrendingUp, Utensils, Database } from 'lucide-react';
+import { Dumbbell, Zap, TrendingUp, Utensils, Database } from 'lucide-react';
+import { NavigationTab } from '../types';
 
-export type NavigationTab = 'today' | 'trend' | 'nutrition' | 'data';
+export type { NavigationTab };
 
 export interface NavigationProps {
   activeTab: NavigationTab;
@@ -11,6 +12,7 @@ export interface NavigationProps {
 export default function Navigation({ activeTab, setActiveTab }: NavigationProps) {
   const tabs: { id: NavigationTab; label: string; icon: React.ElementType }[] = [
     { id: 'today', label: 'Hoje / Treino', icon: Dumbbell },
+    { id: 'hiit', label: 'HIIT Esteira', icon: Zap },
     { id: 'trend', label: 'Tendência / Peso', icon: TrendingUp },
     { id: 'nutrition', label: 'Alimentação', icon: Utensils },
     { id: 'data', label: 'Dados / Sync', icon: Database }

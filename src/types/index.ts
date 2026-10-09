@@ -1,5 +1,7 @@
 export type WeightContextTag = 'Jejum' | 'Pós-treino' | 'Normal';
 
+export type NavigationTab = 'today' | 'hiit' | 'trend' | 'nutrition' | 'data';
+
 export interface WeightLog {
   id: string;
   timestamp: string;
@@ -41,6 +43,9 @@ export interface WorkoutExercise {
   notes?: string;
 }
 
+export type HiitFeeling = 'excellent' | 'good' | 'regular' | 'hard';
+export type HiitCompliance = 'full' | 'partial' | 'difficult';
+
 export interface WorkoutLog {
   id: string;
   date: string;
@@ -50,6 +55,10 @@ export interface WorkoutLog {
   totalDurationSeconds: number;
   exercises: WorkoutExercise[];
   overallRpe: number;
+  feeling?: HiitFeeling;
+  compliance?: HiitCompliance;
+  runSpeed?: number;
+  walkSpeed?: number;
   notes?: string;
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Check, Calendar, Tag, FileText, CheckCircle2 } from 'lucide-react';
 import { WeightContextTag, WeightLog } from '../types';
+import { getLocalDateTimeString } from '../utils/dateUtils';
 
 export interface WeightQuickEntryProps {
   lastWeight?: number;
@@ -10,7 +11,7 @@ export interface WeightQuickEntryProps {
 export default function WeightQuickEntry({ lastWeight, onSave }: WeightQuickEntryProps) {
   const [weight, setWeight] = useState<string>(lastWeight ? String(lastWeight) : '75.0');
   const [tag, setTag] = useState<WeightContextTag>('Jejum');
-  const [timestamp, setTimestamp] = useState<string>(() => new Date().toISOString().slice(0, 16));
+  const [timestamp, setTimestamp] = useState<string>(() => getLocalDateTimeString());
   const [notes, setNotes] = useState<string>('');
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
   const [lastSavedVal, setLastSavedVal] = useState<number | null>(null);

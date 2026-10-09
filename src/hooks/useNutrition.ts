@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { getAllFromStore, putInStore, deleteFromStore } from '../services/db';
 import { DailyNutritionLog, FoodItem, MealItem, MealType, MealGroup } from '../types';
 import { TACO_BRAZILIAN_FOODS } from '../data/tacoDatabase';
+import { getLocalDateString } from '../utils/dateUtils';
 
 export function useNutrition() {
   const [nutritionLogs, setNutritionLogs] = useState<DailyNutritionLog[]>([]);
   const [cachedFoods, setCachedFoods] = useState<FoodItem[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => getLocalDateString());
   const [loading, setLoading] = useState<boolean>(true);
 
   // Refresh nutrition data

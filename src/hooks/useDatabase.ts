@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAllFromStore, putInStore, deleteFromStore, clearStore } from '../services/db';
 import { WeightLog, WorkoutLog, UserProfile, GitHubSettings, ExerciseTemplate, DailyNutritionLog, TrendFitSnapshot, WeightContextTag } from '../types';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const MOCK_PROFILE: UserProfile = { id: 'profile_default', targetWeightKg: 75.0, unit: 'kg' };
 
@@ -100,7 +101,7 @@ export function useDatabase() {
   const saveWorkout = async (workoutData: Partial<WorkoutLog>): Promise<WorkoutLog> => {
     const workout: WorkoutLog = {
       id: workoutData.id || `wk_${Date.now()}`,
-      date: workoutData.date || new Date().toISOString().split('T')[0],
+      date: workoutData.date || getLocalDateString(),
       startTime: workoutData.startTime || new Date().toISOString(),
       endTime: workoutData.endTime || new Date().toISOString(),
       type: workoutData.type || 'Conditioning & Strength',

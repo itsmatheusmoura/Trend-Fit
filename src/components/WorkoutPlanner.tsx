@@ -6,9 +6,10 @@ export interface WorkoutPlannerProps {
   exerciseList?: ExerciseTemplate[];
   onStartLiveWorkout: (options: { preset: { id: string; title: string }; exercises: WorkoutExercise[] }) => void;
   onOpenExerciseManager: () => void;
+  onOpenHiitTab?: () => void;
 }
 
-export default function WorkoutPlanner({ exerciseList = [], onStartLiveWorkout, onOpenExerciseManager }: WorkoutPlannerProps) {
+export default function WorkoutPlanner({ exerciseList = [], onStartLiveWorkout, onOpenExerciseManager, onOpenHiitTab }: WorkoutPlannerProps) {
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<string[]>([]);
 
   const presets = [
@@ -21,8 +22,8 @@ export default function WorkoutPlanner({ exerciseList = [], onStartLiveWorkout, 
     },
     {
       id: 'hiit',
-      title: 'HIIT & Funcional',
-      desc: 'Sprints intervalados com tiros e descansos rápidos.',
+      title: 'HIIT Esteira (Guiado)',
+      desc: 'Aba dedicada com tiro/caminhada, tempo e aviso sonoro.',
       icon: Zap,
       color: 'bg-orange-500'
     },
@@ -42,6 +43,11 @@ export default function WorkoutPlanner({ exerciseList = [], onStartLiveWorkout, 
   };
 
   const handleStart = (preset: { id: string; title: string }) => {
+    if (preset.id === 'hiit' && onOpenHiitTab) {
+      onOpenHiitTab();
+      return;
+    }
+
     let chosen = exerciseList.filter((e) => selectedExerciseIds.includes(e.id));
     if (chosen.length === 0) {
       if (preset.id === 'hiit' || preset.id === 'cardio') {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Flame, Plus, Trash2, Calendar, ChevronLeft, ChevronRight, Scale, Check, AlertTriangle } from 'lucide-react';
 import { DailyNutritionLog, FoodItem, MealItem, MealType, UserProfile } from '../types';
 import FoodSearchModal from './FoodSearchModal';
+import { getLocalDateString } from '../utils/dateUtils';
 
 export interface NutritionTrackerProps {
   currentLog: DailyNutritionLog;
@@ -38,9 +39,9 @@ export default function NutritionTracker({
 
   // Handle Date Navigation
   const handleDateShift = (days: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + days);
-    onSelectDate(d.toISOString().split('T')[0]);
+    const parts = selectedDate.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2] + days);
+    onSelectDate(getLocalDateString(d));
   };
 
   const handleSaveTargetCals = async (e: React.FormEvent) => {
@@ -84,7 +85,7 @@ export default function NutritionTracker({
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="text-xs font-bold text-slate-800 px-2">
-              {selectedDate === new Date().toISOString().split('T')[0]
+              {selectedDate === getLocalDateString()
                 ? 'Hoje'
                 : selectedDate.split('-').reverse().join('/')}
             </span>
